@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моделирование замыкания/размыкания цепи</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<h1>Моделирование замыкания/размыкания цепи</h1>
+
+<label for="induction">Индуктивность (Гн): </label>
+<input type="number" id="induction" step="1" value="1">
+
+<label for="eds">ЭДС (В): </label>
+<input type="number" id="eds" step="1" value="1">
+
+<label for="resistance">Сопротивление (Ом): </label>
+<input type="number" id="resistance" step="1" value="1">
+
+<canvas id="myChart" width="400" height="200"></canvas>
+
+<script>
+    function calculateCurrent(induction, eds, resistance, time) {
+        return eds / resistance * Math.exp(-resistance * time / induction);
+    }
+
+    function updateChart() {
+        const induction = parseFloat(document.getElementById('induction').value);
+        const eds = parseInt(document.getElementById('eds').value);
+        const resistance = parseFloat(document.getElementById('resistance').value);
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+
+        const data = {
+            labels: [],
+            datasets: [{
+                label: 'Сила тока (А) при размыкании',
+                data: [],
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            },
+                {
+                    label: 'Сила тока (А) при замыкании',
+                    data: [],
+                    fill: false,
+                    borderColor: 'rgb(192,75,173)',
+                    tension: 0.1
+                }]
+        };
+
+        for (let time = 0; time <= 100; time += 0.1) {
+            data.labels.push(time.toFixed(4));
+            let current = calculateCurrent(induction, eds, resistance, time)
+            data.datasets[0].data.push(current.toFixed(10));
+            data.datasets[1].data.push((eds / resistance - current).toFixed(10));
+        }
+
+        if (window.myLineChart) {
+            window.myLineChart.data = data;
+            window.myLineChart.update();
+        } else {
+            window.myLineChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Время (с)'
+                            }
+                        },
+                    }
+                }
+            });
+        }
+    }
+
+    document.getElementById('induction').addEventListener('input', updateChart);
+    document.getElementById('eds').addEventListener('input', updateChart);
+    document.getElementById('resistance').addEventListener('input', updateChart);
+
+    updateChart();
+</script>
+</body>
+</html>
